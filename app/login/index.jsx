@@ -1,12 +1,51 @@
-import { View, Text, Image} from 'react-native';
+import { View, Text, Image, Pressable} from 'react-native';
 import React from 'react';
-import { Colors } from './../../constants/Colors';
+import  Colors  from './../../constants/Colors';
+import * as WebBrowser from 'expo-web-browser';
+import { useOAuth } from '@clerk/clerk-expo';
+import * as Linking from 'expo-linking';
+
+export const useWarmUpBrowser = () => {
+  React.useEffect(() => {
+    // Warm up the android browser to improve UX
+    // https://docs.expo.dev/guides/authentication/#improving-user-experience
+    void WebBrowser.warmUpAsync()
+    return () => {
+      void WebBrowser.coolDownAsync()
+    }
+  }, [])
+}
+
+WebBrowser.maybeCompleteAuthSession()
 
 
 export default function LoginScreen() {
+
+  useWarmUpBrowser();
+  const { startOAuthFlow } = useOAuth({ strategy: 'oauth_google' })
+
+  const onPress = useCallback(async () => {
+    try {
+      const { createdSessionId, signIn, signUp, setActive } = await startOAuthFlow({
+        redirectUrl: Linking.createURL('/home', { scheme: 'myapp' }),
+      })
+
+      if (createdSessionId) {
+        
+      } else {
+        // Use signIn or signUp for next steps such as MFA
+      }
+    } catch (err) {
+      console.error('OAuth error', err)
+    }
+  }, [])
+
   return (
-    <View>
-      <Image source={require('./../../assets/images/react-logo.png')}
+    <View style={{
+      backgroundColor: Colors.WHITE,
+      height: '100%'
+    }}>
+      <Image source={require('./../../assets/images/Front.png')}
         style={{
             width: '100%',
             height: 500
@@ -28,9 +67,27 @@ export default function LoginScreen() {
             fontFamily: 'outfit',
             fontSize: 18,
             textAlign: 'center',
-            color: Colors
+            color: Colors.GRAY
 
         }}>Lorem ipsum dolor sit amet consectetur adipisicing elit.</Text>
+
+        <Pressable
+        onPress={onPress}
+        style={{
+          padding: 14,
+          marginTop: 100,
+          backgroundColor: Colors.PRIMARY,
+          width: '100%',
+          borderRadius: 14
+        }}>
+          <Text
+          style={{
+            fontFamily: 'outfit-medium',
+            fontSize: 20,
+            textAlign: 'center'
+          }}
+          >Get Started</Text>
+          </Pressable>
       </View>
     </View>
   )
